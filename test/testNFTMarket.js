@@ -1,9 +1,15 @@
-/* test/sample-test.js */
+const hre = require("hardhat");
+const fs = require('fs');
+const debug = require('debug')("NFTMarketPlace:log");
+debug.color = "159";
+const ethers = hre.ethers;
+
+/* test/testNFTMarket.js */
 describe("NFTMarket", function() {
   it("Should create and execute market sales", async function() {
     /* deploy the marketplace */
-    const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace")
-    const nftMarketplace = await NFTMarketplace.deploy()
+    const NFTMarketPlace = await ethers.getContractFactory("NFTMarketPlace")
+    const nftMarketplace = await hre.upgrades.deployProxy(NFTMarketPlace);
     await nftMarketplace.deployed()
 
     let listingPrice = await nftMarketplace.getListingPrice()
@@ -11,17 +17,21 @@ describe("NFTMarket", function() {
 
     const auctionPrice = ethers.utils.parseUnits('1', 'ether')
 
-    /* create two tokens */
+    const addresses = await ethers.getSigners();
+    /* create two tokens, returns bignumber for tokenID */
     await nftMarketplace.createToken("https://www.mytokenlocation.com", auctionPrice, { value: listingPrice })
+    const tokenID1 = await nftMarketplace.getCurrentTokenID();
     await nftMarketplace.createToken("https://www.mytokenlocation2.com", auctionPrice, { value: listingPrice })
-      
-    const [_, buyerAddress] = await ethers.getSigners()
-  
+    const tokenID2 = await nftMarketplace.getCurrentTokenID();
+
+    debug(`Token ID 1: ${tokenID1}`);
+    debug(`Token ID 2: ${tokenID2}`);
+
     /* execute sale of token to another user */
-    await nftMarketplace.connect(buyerAddress).createMarketSale(1, { value: auctionPrice })
+    await nftMarketplace.connect(addresses[1]).createMarketSale(tokenID1, { value: auctionPrice })
 
     /* resell a token */
-    await nftMarketplace.connect(buyerAddress).resellToken(1, auctionPrice, { value: listingPrice })
+    await nftMarketplace.connect(addresses[1]).resellToken(tokenID1, auctionPrice, { value: listingPrice })
 
     /* query for and return the unsold items */
     items = await nftMarketplace.fetchMarketItems()
@@ -36,6 +46,6 @@ describe("NFTMarket", function() {
       }
       return item
     }))
-    console.log('items: ', items)
+    debug('items: ', items)
   })
 })

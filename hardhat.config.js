@@ -1,4 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
+// hardhat.config.js
+require('@openzeppelin/hardhat-upgrades');
 const fs = require('fs');
 // const infuraId = fs.readFileSync(".infuraid").toString().trim() || "";
 
@@ -6,7 +8,7 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337
+      /* chainId: 1337 */
     },
     /*
     mumbai: {
