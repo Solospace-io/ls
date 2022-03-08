@@ -4,17 +4,15 @@ const fs = require('fs');
 const debug = require('debug')("Deploy:");
 debug.color = "158";
 debug.enabled = true;
+const { marketplaceAddress } = require("../config");
+
 
 async function main() {
 
     const NFTMarketplace = await hre.ethers.getContractFactory("NFTMarketPlace");
-    const nftMarketplace = await hre.upgrades.deployProxy(NFTMarketplace);
+    const nftMarketplace = await hre.upgrades.upgradeProxy(marketplaceAddress, NFTMarketplace);
     await nftMarketplace.deployed();
-    debug("nftMarketplace deployed to:", nftMarketplace.address);
-
-    fs.writeFileSync('./config.js', `
-        export const marketplaceAddress = "${nftMarketplace.address}"
-    `)
+    debug("nftMarketplace upgraded to:", nftMarketplace.address);
 }
 
 main()

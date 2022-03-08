@@ -59,13 +59,37 @@ contract NFTMarketPlace is Initializable, ERC721Upgradeable, ERC721EnumerableUpg
         return listingPrice;
     }
 
-    function createToken(string memory uri, uint256 price) public payable onlyOwner returns (uint) {
+    function createToken(string memory uri, uint256 price) public payable onlyOwner returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, uri);
         createMarketItem(newTokenId, price);
         return newTokenId;
+    }
+
+    function mintTokens(string memory uri, uint count) external payable onlyOwner returns (uint256[] memory) {
+        require(count < 1000, "Can only create 1,000 at a time");
+        uint256[] memory newTokenIds = new uint256[](count);
+        for (uint i=0; i< count; i++) {
+            _tokenIds.increment();
+            uint256 newTokenID = _tokenIds.current();
+            _safeMint(msg.sender, newTokenID);
+            _setTokenURI(newTokenID, uri);
+            newTokenIds[i] = newTokenID;
+        }
+        return newTokenIds;
+    }
+
+    function transferTokens(address payable to, uint256[] memory tokenIDs) external payable onlyOwner {
+        require(tokenIDs.length < 1000, "Can only transfer up to 1,000 tokens at a time");
+        for (uint i=0; i< tokenIDs.length; i++) {
+            uint256 tokenID = tokenIDs[i];
+            require(tokenID < _tokenIds.current(), "token ID out of range");
+            MarketItem memory mic = idToMarketItem[tokenID];
+            mic.seller = payable(msg.sender);
+            _transfer(msg.sender, to, tokenID);
+        }
     }
 
     function createMarketItem(
